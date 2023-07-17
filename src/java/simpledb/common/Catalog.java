@@ -115,12 +115,12 @@ public class Catalog {
      * Returns the DbFile that can be used to read the contents of the
      * specified table.
      *
-     * @param tableid The id of the table, as specified by the DbFile.getId()
+     * @param tableId The id of the table, as specified by the DbFile.getId()
      *                function passed to addTable
      */
-    public DbFile getDatabaseFile(int tableid) throws NoSuchElementException {
+    public DbFile getDatabaseFile(int tableId) throws NoSuchElementException {
         // some code goes here
-        Table table = tables.get(tableid);
+        Table table = tables.get(tableId);
         if (table != null) return table.dbFile;
         throw new NoSuchElementException();
     }

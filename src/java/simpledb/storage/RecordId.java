@@ -69,5 +69,4 @@ public class RecordId implements Serializable {
         return hash.hashCode();
 
     }
-
 }

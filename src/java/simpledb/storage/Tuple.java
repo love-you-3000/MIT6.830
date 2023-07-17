@@ -11,11 +11,13 @@ import java.util.Iterator;
  */
 public class Tuple implements Serializable {
 
-    private TupleDesc td;
+    private TupleDesc td; // 元组描述
 
-    private final ArrayList<Field> fields;
+    private final ArrayList<Field> fields; // Field集合，相当于这一行数据的集合
 
-    private static final long serialVersionUID = 1L;
+
+    private RecordId recordId;
+    private static final long serialVersionUID = 1L; // 序列化ID
 
     /**
      * Create a new tuple with the specified schema (type).
@@ -46,7 +48,7 @@ public class Tuple implements Serializable {
      */
     public RecordId getRecordId() {
         // some code goes here
-        return null;
+        return this.recordId;
     }
 
     /**
@@ -56,6 +58,7 @@ public class Tuple implements Serializable {
      */
     public void setRecordId(RecordId rid) {
         // some code goes here
+        this.recordId = rid;
     }
 
     /**
@@ -66,7 +69,7 @@ public class Tuple implements Serializable {
      */
     public void setField(int i, Field f) {
         // some code goes here
-        if (i >= 0 && i < fields.size()) fields.set(i, f);
+        fields.set(i, f);
 
 
     }

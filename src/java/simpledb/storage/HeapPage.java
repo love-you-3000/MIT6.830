@@ -18,8 +18,8 @@ import java.io.*;
  */
 public class HeapPage implements Page {
     final HeapPageId pid;
-    final TupleDesc td;
-    final byte[] header;
+    final TupleDesc td; // todo 疑惑，一个table是一个DBFile，DBFile中已经有了TupleDesc属性，为什么每一页还要有这个属性
+    final byte[] header; // 头信息字节数组
     final Tuple[] tuples;
     final int numSlots;
     byte[] oldData;
@@ -305,8 +305,6 @@ public class HeapPage implements Page {
         int remainder = i % 8;
         int bit = (header[ind] >> remainder) & 1;
         return bit == 1;
-
-
     }
 
     /**

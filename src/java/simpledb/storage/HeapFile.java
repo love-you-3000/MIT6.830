@@ -33,7 +33,7 @@ public class HeapFile implements DbFile {
      * Constructs a heap file backed by the specified file.
      *
      * @param file the file that stores the on-disk backing store for this heap
-     *          file.
+     *             file.
      */
     public HeapFile(File file, TupleDesc td) {
         // some code goes here
@@ -120,7 +120,7 @@ public class HeapFile implements DbFile {
      */
     public int numPages() {
         // some code goes here
-        return (int)Math.floor(file.length()*1.0/BufferPool.getPageSize());
+        return (int) Math.floor(file.length() * 1.0 / BufferPool.getPageSize());
     }
 
     // see DbFile.java for javadocs
@@ -142,19 +142,20 @@ public class HeapFile implements DbFile {
     // see DbFile.java for javadocs
     public DbFileIterator iterator(TransactionId tid) {
         // some code goes here
-        return new HeapFileIterator(this,tid);
+        return new HeapFileIterator(this, tid);
     }
 
-    private static final class HeapFileIterator implements DbFileIterator{
+    private static final class HeapFileIterator implements DbFileIterator {
         private final HeapFile heapFile;
         private final TransactionId tid;
         private Iterator<Tuple> it;
         private int whichPage;
 
-        public HeapFileIterator(HeapFile file,TransactionId tid){
+        public HeapFileIterator(HeapFile file, TransactionId tid) {
             this.heapFile = file;
             this.tid = tid;
         }
+
         @Override
         public void open() throws DbException, TransactionAbortedException {
             // TODO Auto-generated method stub
@@ -162,31 +163,31 @@ public class HeapFile implements DbFile {
             it = getPageTuples(whichPage);
         }
 
-        private Iterator<Tuple> getPageTuples(int pageNumber) throws TransactionAbortedException, DbException{
-            if(pageNumber >= 0 && pageNumber < heapFile.numPages()){
-                HeapPageId pid = new HeapPageId(heapFile.getId(),pageNumber);
+        private Iterator<Tuple> getPageTuples(int pageNumber) throws TransactionAbortedException, DbException {
+            if (pageNumber >= 0 && pageNumber < heapFile.numPages()) {
+                HeapPageId pid = new HeapPageId(heapFile.getId(), pageNumber);
                 HeapPage page = (HeapPage) Database.getBufferPool().getPage(tid, pid, Permissions.READ_ONLY);
                 return page.iterator();
-            }else{
-                throw new DbException(String.format("heapfile %d does not contain page %d!", pageNumber,heapFile.getId()));
+            } else {
+                throw new DbException(String.format("heapfile %d does not contain page %d!", pageNumber, heapFile.getId()));
             }
         }
 
         @Override
         public boolean hasNext() throws DbException, TransactionAbortedException {
             // TODO Auto-generated method stub
-            if(it == null){
+            if (it == null) {
                 return false;
             }
-            if(!it.hasNext()){
-                if(whichPage < (heapFile.numPages()-1)){
+            if (!it.hasNext()) {
+                if (whichPage < (heapFile.numPages() - 1)) {
                     whichPage++;
                     it = getPageTuples(whichPage);
                     return it.hasNext();
-                }else{
+                } else {
                     return false;
                 }
-            }else{
+            } else {
                 return true;
             }
         }
@@ -194,7 +195,7 @@ public class HeapFile implements DbFile {
         @Override
         public Tuple next() throws DbException, TransactionAbortedException, NoSuchElementException {
             // TODO Auto-generated method stub
-            if(it == null || !it.hasNext()){
+            if (it == null || !it.hasNext()) {
                 throw new NoSuchElementException();
             }
             return it.next();

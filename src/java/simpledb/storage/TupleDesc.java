@@ -53,10 +53,6 @@ public class TupleDesc implements Serializable {
         return tdItems.iterator();
     }
 
-    public void setFieldAr(String[] fieldAr) {
-        this.fieldAr = fieldAr;
-    }
-
     private static final long serialVersionUID = 1L;
 
     private static final String anonymousField = "unnamed";
@@ -75,10 +71,6 @@ public class TupleDesc implements Serializable {
      */
     public TupleDesc(Type[] typeAr, String[] fieldAr) {
         // some code goes here
-        // 判断字段类型长度和字段名称长度是否一致
-        if (typeAr.length != fieldAr.length) throw new RuntimeException();
-        int n = typeAr.length;
-        if (n == 0) throw new RuntimeException();
         this.typeAr = typeAr;
         this.fieldAr = fieldAr;
         saveTdItem();
@@ -86,10 +78,6 @@ public class TupleDesc implements Serializable {
 
     public Type[] getTypeAr() {
         return typeAr;
-    }
-
-    public void setTypeAr(Type[] typeAr) {
-        this.typeAr = typeAr;
     }
 
     public String[] getFieldAr() {
