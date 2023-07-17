@@ -178,7 +178,6 @@ public class HeapFile implements DbFile {
             if(it == null){
                 return false;
             }
-
             if(!it.hasNext()){
                 if(whichPage < (heapFile.numPages()-1)){
                     whichPage++;

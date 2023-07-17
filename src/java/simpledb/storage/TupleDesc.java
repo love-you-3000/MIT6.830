@@ -53,12 +53,16 @@ public class TupleDesc implements Serializable {
         return tdItems.iterator();
     }
 
+    public void setFieldAr(String[] fieldAr) {
+        this.fieldAr = fieldAr;
+    }
+
     private static final long serialVersionUID = 1L;
 
     private static final String anonymousField = "unnamed";
     private Type[] typeAr;
 
-    private final String[] fieldAr;
+    private String[] fieldAr;
 
     /**
      * Create a new TupleDesc with typeAr.length fields with fields of the
@@ -78,6 +82,18 @@ public class TupleDesc implements Serializable {
         this.typeAr = typeAr;
         this.fieldAr = fieldAr;
         saveTdItem();
+    }
+
+    public Type[] getTypeAr() {
+        return typeAr;
+    }
+
+    public void setTypeAr(Type[] typeAr) {
+        this.typeAr = typeAr;
+    }
+
+    public String[] getFieldAr() {
+        return fieldAr;
     }
 
     /**
