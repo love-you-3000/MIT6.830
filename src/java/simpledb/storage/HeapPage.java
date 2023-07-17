@@ -17,7 +17,6 @@ import java.io.*;
  * @see BufferPool
  */
 public class HeapPage implements Page {
-
     final HeapPageId pid;
     final TupleDesc td;
     final byte[] header;
@@ -48,7 +47,6 @@ public class HeapPage implements Page {
         this.td = Database.getCatalog().getTupleDesc(id.getTableId()); // 表的元信息
         this.numSlots = getNumTuples(); // 有多少个槽，每个槽存一个tuple
         DataInputStream dis = new DataInputStream(new ByteArrayInputStream(data)); // 读取原始文件
-
         // allocate and read the header slots of this page
         header = new byte[getHeaderSize()]; // 头信息初始化，一个bitmap
         for (int i = 0; i < header.length; i++)
