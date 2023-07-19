@@ -10,7 +10,7 @@ public class RecordId implements Serializable {
 
     private PageId pid;
 
-    private int tupleno;
+    private int tupleno; // 记录了某个tuple在pid这个页中的第几个slot
     private static final long serialVersionUID = 1L;
 
     /**
