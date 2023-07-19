@@ -92,7 +92,7 @@ public class Insert extends Operator {
      */
     protected Tuple fetchNext() throws TransactionAbortedException, DbException {
         // some code goes here
-        if (insertTuple != null) return null; // todo 多次调用返回null，也就是第一次调用的时候insertTuple一定为null
+        if (insertTuple != null) return null; // todo 多次调用返回null，也就是第一次调用的时候insertTuple一定为null，之后调用相当于重复插入了就直接返回null
         while (child.hasNext()) {
             Tuple toInsertTuple = child.next();
             try {
