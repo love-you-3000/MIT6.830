@@ -7,7 +7,6 @@ import simpledb.transaction.TransactionAbortedException;
 import simpledb.transaction.TransactionId;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
@@ -26,10 +25,12 @@ public class BufferPool {
     /**
      * Bytes per page, including header.
      */
+    // 默认每一页的大小，单位字节
     private static final int DEFAULT_PAGE_SIZE = 4096;
 
     private static int pageSize = DEFAULT_PAGE_SIZE;
 
+    // 页数和对应页映射关系。键为PageId的hashcode
     private final HashMap<Integer, Page> pageStores;
 
     /**
@@ -39,7 +40,10 @@ public class BufferPool {
      */
     public static final int DEFAULT_PAGES = 50;
 
-    private int numPages;
+    // BufferPooL的最大页数
+    private final int numPages;
+
+    private EvictStrategy evict;
 
     /**
      * Creates a BufferPool that caches up to numPages pages.
@@ -50,9 +54,11 @@ public class BufferPool {
         // some code goes here
         this.numPages = numPages;
         this.pageStores = new HashMap<>();
+        this.evict = new LRUCache(numPages);
     }
 
     public static int getPageSize() {
+        // 获取每一页的最大容量
         return pageSize;
     }
 
@@ -83,10 +89,16 @@ public class BufferPool {
      */
     public Page getPage(TransactionId tid, PageId pid, Permissions perm)
             throws TransactionAbortedException, DbException {
+
         if (!pageStores.containsKey(pid.hashCode())) {
+            // 如果页面满了，进行页面置换
+            if (pageStores.size() >= numPages) {
+                evictPage();
+            }
             DbFile file = Database.getCatalog().getDatabaseFile(pid.getTableId());
             Page page = file.readPage(pid);
             pageStores.put(pid.hashCode(), page);
+            evict.addPageId(pid);
         }
         return pageStores.get(pid.hashCode());
     }
@@ -156,8 +168,8 @@ public class BufferPool {
         // some code goes here
         // not necessary for lab1
         DbFile databaseFile = Database.getCatalog().getDatabaseFile(tableId);
-        updateBufferPool(databaseFile.insertTuple(tid,t),tid);
-        }
+        updateBufferPool(databaseFile.insertTuple(tid, t), tid);
+    }
 
     /**
      * Remove the specified tuple from the buffer pool.
@@ -178,7 +190,7 @@ public class BufferPool {
         // not necessary for lab1
         int tableId = t.getRecordId().getPageId().getTableId();
         DbFile databaseFile = Database.getCatalog().getDatabaseFile(tableId);
-        updateBufferPool(databaseFile.deleteTuple(tid,t),tid);
+        updateBufferPool(databaseFile.deleteTuple(tid, t), tid);
     }
 
     /**
@@ -189,7 +201,7 @@ public class BufferPool {
     public synchronized void flushAllPages() throws IOException {
         // some code goes here
         // not necessary for lab1
-
+        for (Integer n : pageStores.keySet()) flushPage(pageStores.get(n).getId());
     }
 
     /**
@@ -204,6 +216,7 @@ public class BufferPool {
     public synchronized void discardPage(PageId pid) {
         // some code goes here
         // not necessary for lab1
+        pageStores.remove(pid.hashCode());
     }
 
     /**
@@ -214,6 +227,11 @@ public class BufferPool {
     private synchronized void flushPage(PageId pid) throws IOException {
         // some code goes here
         // not necessary for lab1
+        // 刷新固定的page到磁盘中去
+        int tableId = pid.getTableId();
+        Page page = pageStores.get(pid.hashCode());
+        HeapFile databaseFile = (HeapFile) Database.getCatalog().getDatabaseFile(tableId);
+        databaseFile.writePage(page);
     }
 
     /**
@@ -231,6 +249,13 @@ public class BufferPool {
     private synchronized void evictPage() throws DbException {
         // some code goes here
         // not necessary for lab1
+        PageId evictPageId = evict.getEvictPageId();
+        try {
+            flushPage(evictPageId);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        pageStores.remove(evictPageId.hashCode());
     }
 
     private void updateBufferPool(List<Page> pagelist, TransactionId tid) throws DbException {
