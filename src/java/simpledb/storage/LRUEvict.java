@@ -10,16 +10,19 @@ import java.util.concurrent.ConcurrentHashMap;
  * @date: 2023/7/19
  **/
 
-public class LRUCache implements EvictStrategy {
-    private DLinkedNode head, tail;
-    private Map<PageId, DLinkedNode> map;
+public class LRUEvict implements EvictStrategy {
+    private final DLinkedNode head;
+    private final DLinkedNode tail;
+    private final Map<PageId, DLinkedNode> map;
 
-    public LRUCache(int numPages) {
+    // LRU缓存容量
+
+    public LRUEvict(int numPages) {
+        map = new ConcurrentHashMap<>(numPages);
         head = new DLinkedNode();
         tail = new DLinkedNode();
         head.next = tail;
         tail.prev = head;
-        map = new ConcurrentHashMap<>(numPages);
     }
 
     @Override
@@ -32,11 +35,14 @@ public class LRUCache implements EvictStrategy {
             map.put(pageId, node);
             addToHead(node);
         }
+        System.out.println("LRU SIZE = " + map.size());
     }
 
     @Override
     public PageId getEvictPageId() {
-        return removeTail().getValue();
+        DLinkedNode node = removeTail();
+        map.remove(node.getValue());
+        return node.getValue();
     }
 
     private void addToHead(DLinkedNode node) {

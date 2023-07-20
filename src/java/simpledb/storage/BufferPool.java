@@ -35,7 +35,7 @@ public class BufferPool {
      * other classes. BufferPool should use the numPages argument to the
      * constructor instead.
      */
-    public static final int DEFAULT_PAGES = 500;
+    public static final int DEFAULT_PAGES = 50;
 
     private final Integer numPages;
     private final Map<PageId, Page> pageCache;
@@ -49,7 +49,7 @@ public class BufferPool {
     public BufferPool(int numPages) {
         this.numPages = numPages;
         this.pageCache = new ConcurrentHashMap<>();
-        this.evict = new LRUCache(numPages);
+        this.evict = new LRUEvict(numPages);
     }
 
     public static int getPageSize() {
@@ -84,7 +84,8 @@ public class BufferPool {
     public Page getPage(TransactionId tid, PageId pid, Permissions perm)
             throws TransactionAbortedException, DbException {
         if (!pageCache.containsKey(pid)) {
-            if (pageCache.size() > numPages) {
+            if (pageCache.size() >= numPages) {
+                System.out.println("准备置换" + pageCache.size());
                 evictPage();
             }
             DbFile dbFile = Database.getCatalog().getDatabaseFile(pid.getTableId());
