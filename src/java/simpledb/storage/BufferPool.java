@@ -7,8 +7,9 @@ import simpledb.transaction.TransactionAbortedException;
 import simpledb.transaction.TransactionId;
 
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * BufferPool manages the reading and writing of pages into memory from
@@ -25,25 +26,20 @@ public class BufferPool {
     /**
      * Bytes per page, including header.
      */
-    // 默认每一页的大小，单位字节
     private static final int DEFAULT_PAGE_SIZE = 4096;
 
     private static int pageSize = DEFAULT_PAGE_SIZE;
-
-    // 页数和对应页映射关系。键为PageId的hashcode
-    private final HashMap<Integer, Page> pageStores;
 
     /**
      * Default number of pages passed to the constructor. This is used by
      * other classes. BufferPool should use the numPages argument to the
      * constructor instead.
      */
-    public static final int DEFAULT_PAGES = 50;
+    public static final int DEFAULT_PAGES = 500;
 
-    // BufferPooL的最大页数
-    private final int numPages;
-
-    private EvictStrategy evict;
+    private final Integer numPages;
+    private final Map<PageId, Page> pageCache;
+    private final EvictStrategy evict;
 
     /**
      * Creates a BufferPool that caches up to numPages pages.
@@ -51,14 +47,12 @@ public class BufferPool {
      * @param numPages maximum number of pages in this buffer pool.
      */
     public BufferPool(int numPages) {
-        // some code goes here
         this.numPages = numPages;
-        this.pageStores = new HashMap<>();
+        this.pageCache = new ConcurrentHashMap<>();
         this.evict = new LRUCache(numPages);
     }
 
     public static int getPageSize() {
-        // 获取每一页的最大容量
         return pageSize;
     }
 
@@ -89,18 +83,16 @@ public class BufferPool {
      */
     public Page getPage(TransactionId tid, PageId pid, Permissions perm)
             throws TransactionAbortedException, DbException {
-
-        if (!pageStores.containsKey(pid.hashCode())) {
-            // 如果页面满了，进行页面置换
-            if (pageStores.size() >= numPages) {
+        if (!pageCache.containsKey(pid)) {
+            if (pageCache.size() > numPages) {
                 evictPage();
             }
-            DbFile file = Database.getCatalog().getDatabaseFile(pid.getTableId());
-            Page page = file.readPage(pid);
-            pageStores.put(pid.hashCode(), page);
+            DbFile dbFile = Database.getCatalog().getDatabaseFile(pid.getTableId());
+            Page page = dbFile.readPage(pid);
+            pageCache.put(pid, page);
             evict.addPageId(pid);
         }
-        return pageStores.get(pid.hashCode());
+        return pageCache.get(pid);
     }
 
     /**
@@ -165,10 +157,8 @@ public class BufferPool {
      */
     public void insertTuple(TransactionId tid, int tableId, Tuple t)
             throws DbException, IOException, TransactionAbortedException {
-        // some code goes here
-        // not necessary for lab1
-        DbFile databaseFile = Database.getCatalog().getDatabaseFile(tableId);
-        updateBufferPool(databaseFile.insertTuple(tid, t), tid);
+        DbFile dbFile = Database.getCatalog().getDatabaseFile(tableId);
+        updateBufferPool(dbFile.insertTuple(tid, t), tid);
     }
 
     /**
@@ -186,11 +176,14 @@ public class BufferPool {
      */
     public void deleteTuple(TransactionId tid, Tuple t)
             throws DbException, IOException, TransactionAbortedException {
-        // some code goes here
-        // not necessary for lab1
-        int tableId = t.getRecordId().getPageId().getTableId();
-        DbFile databaseFile = Database.getCatalog().getDatabaseFile(tableId);
-        updateBufferPool(databaseFile.deleteTuple(tid, t), tid);
+        DbFile dbFile = Database.getCatalog().getDatabaseFile(t.getRecordId().getPageId().getTableId());
+        updateBufferPool(dbFile.deleteTuple(tid, t), tid);
+    }
+
+    private void updateBufferPool(List<Page> pages, TransactionId tid) throws DbException {
+        for (Page page : pages) {
+            page.markDirty(true, tid);
+        }
     }
 
     /**
@@ -199,9 +192,13 @@ public class BufferPool {
      * break simpledb if running in NO STEAL mode.
      */
     public synchronized void flushAllPages() throws IOException {
-        // some code goes here
-        // not necessary for lab1
-        for (Integer n : pageStores.keySet()) flushPage(pageStores.get(n).getId());
+        pageCache.forEach((pageId, page) -> {
+            try {
+                flushPage(pageId);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        });
     }
 
     /**
@@ -214,9 +211,7 @@ public class BufferPool {
      * are removed from the cache so they can be reused safely
      */
     public synchronized void discardPage(PageId pid) {
-        // some code goes here
-        // not necessary for lab1
-        pageStores.remove(pid.hashCode());
+        pageCache.remove(pid);
     }
 
     /**
@@ -225,13 +220,12 @@ public class BufferPool {
      * @param pid an ID indicating the page to flush
      */
     private synchronized void flushPage(PageId pid) throws IOException {
-        // some code goes here
-        // not necessary for lab1
-        // 刷新固定的page到磁盘中去
+        Page flush = pageCache.get(pid);
+        // 通过tableId找到对应的DbFile,并将page写入到对应的DbFile中
         int tableId = pid.getTableId();
-        Page page = pageStores.get(pid.hashCode());
-        HeapFile databaseFile = (HeapFile) Database.getCatalog().getDatabaseFile(tableId);
-        databaseFile.writePage(page);
+        DbFile dbFile = Database.getCatalog().getDatabaseFile(tableId);
+        // 将page刷新到磁盘
+        dbFile.writePage(flush);
     }
 
     /**
@@ -247,24 +241,13 @@ public class BufferPool {
      * Flushes the page to disk to ensure dirty pages are updated on disk.
      */
     private synchronized void evictPage() throws DbException {
-        // some code goes here
-        // not necessary for lab1
         PageId evictPageId = evict.getEvictPageId();
         try {
             flushPage(evictPageId);
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            e.printStackTrace();
         }
-        pageStores.remove(evictPageId.hashCode());
+        pageCache.remove(evictPageId);
     }
 
-    private void updateBufferPool(List<Page> pagelist, TransactionId tid) throws DbException {
-        for (Page p : pagelist) {
-            p.markDirty(true, tid);
-            // update bufferpool
-            if (pageStores.size() > numPages)
-                evictPage();
-            pageStores.put(p.getId().hashCode(), p);
-        }
-    }
 }

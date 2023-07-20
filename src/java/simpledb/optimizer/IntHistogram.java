@@ -9,20 +9,15 @@ import java.util.Arrays;
  */
 public class IntHistogram {
 
-    // 桶的个数
-    // 该列最小值
+    private int[] buckets;
     private int min;
-
-    // 该列最大值
     private int max;
-
-    // 每个桶的宽度,
     private double width;
 
-    // 该列全部元素的数量
-    private int nTuples;
-    // 存放不同的单桶
-    int[] buckets;
+    /**
+     * 元组记录总数
+     */
+    private int ntups;
 
     /**
      * Create a new IntHistogram.
@@ -42,15 +37,12 @@ public class IntHistogram {
      */
     public IntHistogram(int buckets, int min, int max) {
         // some code goes here
-        // 桶的数量
         this.buckets = new int[buckets];
         this.min = min;
         this.max = max;
-        this.nTuples = 0;
-        //一个桶的数据范围
         this.width = Math.max(1, (max - min + 1.0) / buckets);
+        this.ntups = 0;
     }
-
 
     /**
      * Add a value to the set of values that you are keeping a histogram of.
@@ -61,7 +53,7 @@ public class IntHistogram {
         // some code goes here
         if (v >= min && v <= max && getIndex(v) != -1) {
             buckets[getIndex(v)]++;
-            nTuples++;
+            ntups++;
         }
     }
 
@@ -83,20 +75,12 @@ public class IntHistogram {
      * @param v  Value
      * @return Predicted selectivity of this particular operator and value
      */
-//    public double estimateSelectivity(Predicate.Op op, int v) {
-//        // some code goes here
-//        if (op == Predicate.Op.EQUALS) return equalsRatio(v);
-//        else if (op == Predicate.Op.GREATER_THAN) return lessThanRatio(v);
-//        else if (op == Predicate.Op.LESS_THAN) return lessThanRatio(v);
-//        else if (op == Predicate.Op.NOT_EQUALS) return 1 - equalsRatio(v);
-//        else if (op == Predicate.Op.LESS_THAN_OR_EQ) return equalsRatio(v) + lessThanRatio(v);
-//        else if (op == Predicate.Op.GREATER_THAN_OR_EQ) return equalsRatio(v) + greaterThanRatio(v);
-//        return 0.0;
-//    }
     public double estimateSelectivity(Predicate.Op op, int v) {
+
         // some code goes here
         // case: 2、3、4、5； 6，7，8，9； v = 7
         switch (op) {
+
             // 8，9
             case GREATER_THAN:
                 if (v > max) {
@@ -111,7 +95,7 @@ public class IntHistogram {
                     }
                     // 2 * 4 + 2 - 1 -7
                     tuples += (min + (getIndex(v) + 1) * width - 1 - v) * (1.0 * buckets[index] / width);
-                    return tuples / nTuples;
+                    return tuples / ntups;
                 }
             case LESS_THAN:
                 return 1 - estimateSelectivity(Predicate.Op.GREATER_THAN_OR_EQ, v);
@@ -129,54 +113,18 @@ public class IntHistogram {
         }
     }
 
-//
-//    private double equalsRatio(int v) {
-//        // 首先获取该值对应的桶
-//        int target = getIndex(v);
-//        // 该桶中对应tuple的数量
-//        int count = buckets[target];
-//        return (count * 1.0 / nTuples) / width;
-//    }
-//
-//    private double greaterThanRatio(int v) {
-//        // 首先获取该值对应的桶
-//        int target = getIndex(v);
-//        // 该桶中对应tuple的数量
-//        int count = buckets[target];
-//        // 首先算该值对应的桶中大于v的值的占比
-//        double selectivity = (double) (((curr.right - v) / width) * curr.count) / nTuples;
-//        // 然后把剩余的桶的占比累加
-//        for (int i = target + 1; i < bucketsNum; i++) {
-//            selectivity += (double) buckets[i]/ nTuples;
-//        }
-//        return selectivity;
-//    }
-//
-//    private double lessThanRatio(int v) {
-//        // 首先获取该值对应的桶
-//        int target = getWhichBucket(v);
-//        // 该桶中对应tuple的数量
-//        Bucket curr = buckets[target];
-//        double selectivity = (double) (((v - curr.left) / width) * curr.count) / nTuples;
-//        for (int i = target - 1; i >= 0; i--) {
-//            selectivity += (double) buckets[i].count / nTuples;
-//        }
-//        return selectivity;
-//
-//    }
-
     /**
      * @return the average selectivity of this histogram.
-     * <p>
-     * This is not an indispensable method to implement the basic
-     * join optimization. It may be needed if you want to
-     * implement a more efficient optimization
+     *         <p>
+     *         This is not an indispensable method to implement the basic
+     *         join optimization. It may be needed if you want to
+     *         implement a more efficient optimization
      */
     public double avgSelectivity() {
         // some code goes here
         double sum = 0;
         for (int bucket : buckets) {
-            sum += (1.0 * bucket / nTuples);
+            sum += (1.0 * bucket / ntups);
         }
         return sum / buckets.length;
     }
@@ -193,5 +141,4 @@ public class IntHistogram {
                 ", width =" + width +
                 "}";
     }
-
 }
