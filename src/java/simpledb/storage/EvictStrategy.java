@@ -1,5 +1,7 @@
 package simpledb.storage;
 
+import simpledb.common.DbException;
+
 /**
  * @className: Evictstrategy
  * @author: 朱江
@@ -9,8 +11,9 @@ package simpledb.storage;
 public interface EvictStrategy {
 
     // 返回要删除的页面的ID
-    PageId getEvictPageId();
+    PageId getEvictPageId() throws DbException;
 
-    void addPageId(PageId pageId);
+    void addPageId(PageId pageId,Page page);
 
+    void updateByPageId(PageId pageId,Page page);
 }

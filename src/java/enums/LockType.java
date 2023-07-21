@@ -2,10 +2,7 @@ package enums;
 
 import lombok.Getter;
 
-/**
- * @author 陈旭 <chenxu08@kuaishou.com>
- * Created on 2022-12-29
- */
+
 public enum LockType {
 
     SHARE_LOCK(0, "共享锁"),
@@ -19,6 +16,4 @@ public enum LockType {
         this.code = code;
         this.value = value;
     }
-
-
 }

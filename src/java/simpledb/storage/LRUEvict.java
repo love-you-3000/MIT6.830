@@ -1,5 +1,7 @@
 package simpledb.storage;
 
+import simpledb.common.DbException;
+
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -26,12 +28,12 @@ public class LRUEvict implements EvictStrategy {
     }
 
     @Override
-    public void addPageId(PageId pageId) {
+    public void addPageId(PageId pageId, Page page) {
         if (map.containsKey(pageId)) {
             DLinkedNode node = map.get(pageId);
             moveToHead(node);
         } else {
-            DLinkedNode node = new DLinkedNode(pageId);
+            DLinkedNode node = new DLinkedNode(pageId, page);
             map.put(pageId, node);
             addToHead(node);
         }
@@ -39,12 +41,16 @@ public class LRUEvict implements EvictStrategy {
     }
 
     @Override
-    public PageId getEvictPageId() {
+    public PageId getEvictPageId() throws DbException {
         DLinkedNode node = removeTail();
-        map.remove(node.getValue());
-        return node.getValue();
+        map.remove(node.getKey());
+        return node.getKey();
     }
 
+    public void updateByPageId(PageId pageId, Page page){
+        DLinkedNode node = new DLinkedNode(pageId, page);
+        map.put(pageId, node);
+    }
     private void addToHead(DLinkedNode node) {
         node.prev = head;
         node.next = head.next;
@@ -62,25 +68,36 @@ public class LRUEvict implements EvictStrategy {
         addToHead(node);
     }
 
-    private DLinkedNode removeTail() {
+    private DLinkedNode removeTail() throws DbException {
         DLinkedNode res = tail.prev;
+        while (res.getValue().isDirty() != null && res != head)
+            res = res.prev;
+        if (res == head || res == tail)
+            throw new DbException("没有合适的页存储空间或者所有页都为脏页！！");
         removeNode(res);
         return res;
     }
 
     private static class DLinkedNode {
-        PageId value;
+        PageId key;
+
+        Page value;
         DLinkedNode prev;
         DLinkedNode next;
 
         public DLinkedNode() {
         }
 
-        public DLinkedNode(PageId value) {
+        public DLinkedNode(PageId key, Page value) {
+            this.key = key;
             this.value = value;
         }
 
-        public PageId getValue() {
+        public PageId getKey() {
+            return key;
+        }
+
+        public Page getValue() {
             return value;
         }
     }

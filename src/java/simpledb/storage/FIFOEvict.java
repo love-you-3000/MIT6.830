@@ -20,7 +20,7 @@ public class FIFOEvict implements EvictStrategy {
     }
 
     @Override
-    public void addPageId(PageId pageId) {
+    public void addPageId(PageId pageId, Page page) {
         // 向尾部插入元素
         boolean offer = queue.offer(pageId);
         if (offer) {
@@ -29,6 +29,11 @@ public class FIFOEvict implements EvictStrategy {
         } else {
             System.out.println("PageId: " + pageId + " 插入队列失败");
         }
+    }
+
+    @Override
+    public void updateByPageId(PageId pageId, Page page) {
+
     }
 
     @Override

@@ -251,8 +251,6 @@ public class HeapFile implements DbFile {
         p.markDirty(true, tid);
         pageList.add(p);
         return pageList;
-
-
     }
 
     // see DbFile.java for javadocs
