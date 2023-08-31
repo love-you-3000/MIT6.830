@@ -224,19 +224,19 @@ public class HeapFile implements DbFile {
             throws DbException, IOException, TransactionAbortedException {
         // some code goes here
         // not necessary for lab1
-        ArrayList<Page> pageList = new ArrayList<Page>();
+        ArrayList<Page> pageList = new ArrayList<>();
         for (int i = 0; i < numPages(); ++i) {
             // took care of getting new page
             HeapPageId heapPageId = new HeapPageId(this.getId(), i);
-            HeapPage p = (HeapPage) Database.getBufferPool().getPage(tid,
+            HeapPage page = (HeapPage) Database.getBufferPool().getPage(tid,
                     heapPageId, Permissions.READ_WRITE);
-            if (p.getNumEmptySlots() == 0) {
+            if (page.getNumEmptySlots() == 0) {
                 // lab4 解锁
                 Database.getBufferPool().unsafeReleasePage(tid, heapPageId);
                 continue;
             }
-            p.insertTuple(t);
-            pageList.add(p);
+            page.insertTuple(t);
+            pageList.add(page);
             return pageList;
         }
         // 如果现有的页都没有空闲的slot，则新起一页

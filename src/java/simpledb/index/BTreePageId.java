@@ -17,7 +17,7 @@ public class BTreePageId implements PageId {
 
 	private final int tableId;
 	private final int pgNo;
-	private final int pgcateg;
+    private final int pgcateg; // 标识当前页的类型
 
 	static public String categToString(int categ) {
 		switch (categ) {

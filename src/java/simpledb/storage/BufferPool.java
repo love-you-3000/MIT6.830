@@ -8,7 +8,6 @@ import simpledb.LogUtils;
 import simpledb.common.Database;
 import simpledb.common.DbException;
 import simpledb.common.Permissions;
-import simpledb.index.BTreePageId;
 import simpledb.transaction.TransactionAbortedException;
 import simpledb.transaction.TransactionId;
 
@@ -100,9 +99,6 @@ public class BufferPool {
             throws TransactionAbortedException, DbException {
         LockType lockType;
         int retry = 2;
-        if (pid instanceof BTreePageId) {
-            retry = 2;
-        }
         // 根据不同的读写类型分发不同的锁
         if (perm == Permissions.READ_ONLY) {
             lockType = LockType.SHARE_LOCK;
@@ -110,7 +106,7 @@ public class BufferPool {
             lockType = LockType.EXCLUSIVE_LOCK;
         }
         try {
-            // 如果获取lock失败（重试'RETRY_MAX'次）则直接放弃事务
+            // 如果获取lock失败（重试RETRY_MAX次）则直接放弃事务
             if (!lockManager.acquireLock(pid, tid, lockType, retry)) {
                 // 获取锁失败，回滚事务
                 LogUtils.writeLog(LogUtils.ERROR, "tid:" + tid + "获取" + perm + "权限失败，进行回滚！！！");
@@ -197,6 +193,7 @@ public class BufferPool {
     }
 
     private void rollBack(TransactionId tid) {
+        // 將该事物对应的page页从磁盘中重新读取一次
         for (PageId pageId : pageCache.keySet()) {
             Page page = pageCache.get(pageId);
             if (tid.equals(page.isDirty())) {
@@ -257,7 +254,7 @@ public class BufferPool {
 
     /**
      * Flush all dirty pages to disk.
-     * NB: Be careful using this routine -- it writes dirty data to disk so will
+     * NB: Be careful using this routine -- it writes dirty data to disk so will`
      * break simpledb if running in NO STEAL mode.
      */
     public synchronized void flushAllPages() throws IOException {
@@ -290,6 +287,12 @@ public class BufferPool {
      */
     private synchronized void flushPage(PageId pid) throws IOException {
         Page flush = pageCache.get(pid);
+        TransactionId dirtier = flush.isDirty();
+        if (dirtier != null) {
+            // 在将Page刷入磁盘之前，先写入log日志，记录该page修改前后的值
+            Database.getLogFile().logWrite(dirtier, flush.getBeforeImage(), flush);
+            Database.getLogFile().force();
+        }
         // 通过tableId找到对应的DbFile,并将page写入到对应的DbFile中
         int tableId = pid.getTableId();
         DbFile dbFile = Database.getCatalog().getDatabaseFile(tableId);
@@ -462,9 +465,5 @@ public class BufferPool {
                 this.notifyAll();
             }
         }
-
-
     }
-
-
 }

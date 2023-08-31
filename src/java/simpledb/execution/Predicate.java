@@ -10,7 +10,6 @@ import java.io.Serializable;
  */
 public class Predicate implements Serializable {
 
-
     private int field;
 
     private Op op;

@@ -25,7 +25,6 @@ public class HeapPage implements Page {
     final int numSlots;
     byte[] oldData;
     private final Byte oldDataLock = (byte) 0;
-
     // the transaction id which changed the page to dirty
     private TransactionId dirtyId;
     // if the page is dirty
@@ -131,6 +130,7 @@ public class HeapPage implements Page {
     private Tuple readNextTuple(DataInputStream dis, int slotId) throws NoSuchElementException {
         // if associated bit is not set, read forward to the next tuple, and
         // return null.
+        // 跳过slot为0的tuple
         if (!isSlotUsed(slotId)) {
             for (int i = 0; i < td.getSize(); i++) {
                 try {
@@ -148,7 +148,7 @@ public class HeapPage implements Page {
         t.setRecordId(rid);
         try {
             for (int j = 0; j < td.numFields(); j++) {
-                Field f = td.getFieldType(j).parse(dis);
+                Field f = td.getFieldType(j).parse(dis); //
                 t.setField(j, f);
             }
         } catch (java.text.ParseException e) {
@@ -292,8 +292,6 @@ public class HeapPage implements Page {
                 break;
             }
         }
-
-
     }
 
     /**

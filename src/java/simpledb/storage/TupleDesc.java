@@ -3,7 +3,10 @@ package simpledb.storage;
 import simpledb.common.Type;
 
 import java.io.Serializable;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.NoSuchElementException;
 
 /**
  * TupleDesc describes the schema of a tuple.
@@ -25,6 +28,11 @@ public class TupleDesc implements Serializable {
     }
 
     private static final long serialVersionUID = 1L;
+
+
+    public TupleDesc() {
+        items = new ArrayList<>();
+    }
 
     /**
      * Create a new TupleDesc with typeAr.length fields with fields of the
@@ -141,10 +149,23 @@ public class TupleDesc implements Serializable {
      * @return the new TupleDesc
      */
     public static TupleDesc merge(TupleDesc td1, TupleDesc td2) {
-        final Set<TDItem> items = new HashSet<>(td1.items.size() + td2.items.size());
-        items.addAll(td1.getItems());
-        items.addAll(td2.getItems());
-        return new TupleDesc(new ArrayList<>(items));
+        // some code goes here
+        if (td1 == null) {
+            return td2;
+        }
+
+        if (td2 == null) {
+            return td1;
+        }
+        TupleDesc tupleDesc = new TupleDesc();
+        for (int i = 0; i < td1.numFields(); i++) {
+            tupleDesc.items.add(td1.items.get(i));
+        }
+        for (int i = 0; i < td2.numFields(); i++) {
+            tupleDesc.items.add(td2.items.get(i));
+        }
+
+        return tupleDesc;
     }
 
     public List<TDItem> getItems() {

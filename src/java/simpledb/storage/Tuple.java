@@ -16,7 +16,7 @@ public class Tuple implements Serializable {
     private final ArrayList<Field> fields; // Field集合，相当于这一行数据的集合
 
 
-    private RecordId recordId;
+    private RecordId recordId; // 记录了该tuple在哪一页的第几个tuple
     private static final long serialVersionUID = 1L; // 序列化ID
 
     /**

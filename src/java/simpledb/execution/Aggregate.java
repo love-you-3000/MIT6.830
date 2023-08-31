@@ -55,7 +55,7 @@ public class Aggregate extends Operator {
         this.aop = aop;
         // 聚合类型,如果是-1,,说明不分组聚合
         Type gfieldtype = gfield == -1 ? null : this.child.getTupleDesc().getFieldType(this.gfield);
-        // 选用和是的聚合器
+        // 选用合适的聚合器
         if(this.child.getTupleDesc().getFieldType(this.afield) == (Type.STRING_TYPE)){
             this.aggregator = new StringAggregator(this.gfield,gfieldtype,this.afield,this.aop);
         }else{
